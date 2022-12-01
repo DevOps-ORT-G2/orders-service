@@ -101,7 +101,7 @@ steps:
       location /products {
         proxy_pass http://products/products/;
       }
-      location /orders {
+      location /shipping {
         proxy_pass http://shipping/shipping/;
       }
     }";
