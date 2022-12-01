@@ -81,9 +81,14 @@ steps:
 
 - script: |
     conf="upstream orders {
+      server 172.17.0.6:8080;
+    }
+    conf="upstream products {
       server 172.17.0.3:8080;
     }
-    
+    conf="upstream shipping {
+      server 172.17.0.5:8080;
+    }
     server {
       access_log /var/log/nginx/api_access.log main; # Each API may also log to a separate file
     
@@ -92,6 +97,12 @@ steps:
     
       location /orders {
         proxy_pass http://orders/orders/;
+      }
+      location /products {
+        proxy_pass http://products/products/;
+      }
+      location /orders {
+        proxy_pass http://shipping/shipping/;
       }
     }";
     docker pull nginx:1.21
@@ -111,6 +122,34 @@ steps:
 #########################################################################################
 
 
+- script: |
+    
+    # clono repos
+    git clone -b master --single-branch git@github.com:DevOps-ORT-G2/products-service.git ms-products
+    git clone -b master --single-branch git@github.com:DevOps-ORT-G2/payments-service.git ms-payments
+    git clone -b master --single-branch git@github.com:DevOps-ORT-G2/shipping-service.git ms-shipping
+    
+    # buildeo jars e imagenes dockers
+    cd ms-products && mvn install && docker build --build-arg JAR_FILE=target/products-service-example-0.0.1-SNAPSHOT.jar -t products-service . 
+    cd ../ms-payments && mvn install && docker build --build-arg JAR_FILE=target/payments-service-example-0.0.1-SNAPSHOT.jar -t payments-service . 
+    cd ../ms-shipping && mvn install && docker build --build-arg JAR_FILE=target/shipping-service-example-0.0.1-SNAPSHOT.jar -t shipping-service . 
+    
+    # levanto dockers
+    cd ..
+    docker run -d --name products-service-test products-service 
+    docker run -d --name payments-service-test payments-service 
+    docker run -d --name shipping-service-test shipping-service 
+
+  displayName: 'Aprovisionar MSs de dependencia'
+
+- script: docker inspect products-service-test | grep '"IPAddress":' -A 0 -m 1 | cut -f4 -d'"' 
+  displayName: Obtener ip del docker MS Products
+
+- script: docker inspect payments-service-test | grep '"IPAddress":' -A 0 -m 1 | cut -f4 -d'"' 
+  displayName: Obtener ip del docker MS Payments
+
+- script: docker inspect shipping-service-test | grep '"IPAddress":' -A 0 -m 1 | cut -f4 -d'"' 
+  displayName: Obtener ip del docker MS Shipping
 
 #########################################################################################
 # Buildeamos imagen docker del MS y levantamos para realizar pruebas con postman
@@ -124,11 +163,11 @@ steps:
     arguments: '--build-arg JAR_FILE=target/orders-service-example-0.0.1-SNAPSHOT.jar'
     imageName: 'orders-service'
 
-- script: docker run -d --name orders-service-test orders-service
+- script: docker run -d --name orders-service-test --env "APP_ARGS=http://172.17.0.4:8080 http://172.17.0.5:8080 http://172.17.0.3:8080 orders-service
   displayName: Levantar docker 
 
 - script: docker inspect orders-service-test | grep '"IPAddress":' -A 0 -m 1 | cut -f4 -d'"' 
-  displayName: Obtener ip del docker MS
+  displayName: Obtener ip del docker MS Orders
 
 - script: docker ps -a
   displayName: Verificar dockers levantados
