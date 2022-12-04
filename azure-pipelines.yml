@@ -183,11 +183,15 @@ steps:
 ##########################################################
 # Pusheamos la imagen de docker al ECR
 ##########################################################
-#- task: ECRPushImage@1
-#  inputs:
-#    awsCredentials: 'AWS'
-#    regionName: 'us-east-1'
-#    imageSource: 'imagename'
-#    sourceImageName: 'orders-service'
-#    repositoryName: 'orders-service'
-    
+
+- task: ECRPushImage@1
+  displayName: Pushear imagen a ECR
+  inputs:
+    awsCredentials: 'AWS'
+    regionName: 'us-east-1'
+    imageSource: 'imagename'
+    sourceImageName: 'orders-service'
+    repositoryName: 'orders-service'
+    pushTag: '1'
+    autoCreateRepository: true
+    forceDockerNamingConventions: true 
