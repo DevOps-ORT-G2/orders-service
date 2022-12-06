@@ -187,6 +187,7 @@ steps:
 
     new_version=$(($version_build+1))
     echo "version_build="$new_version > .version/build
+    echo "##vso[task.setvariable variable=tag_version]$new_version"
     cat .version/build
   
     git add .
@@ -194,7 +195,9 @@ steps:
     git push origin HEAD:master 
   displayName: Actualizar versión de build 
   
-    
+- bash: |
+    echo "MI VARIABLE TAG: $tag_version"
+
 ##########################################################
 # Pusheamos la imagen de docker al ECR
 ##########################################################
@@ -207,6 +210,6 @@ steps:
     imageSource: 'imagename'
     sourceImageName: 'orders-service'
     repositoryName: 'orders-service'
-    pushTag: '$new_version'
+    pushTag: $(tag_version)
     autoCreateRepository: true
     forceDockerNamingConventions: true 
