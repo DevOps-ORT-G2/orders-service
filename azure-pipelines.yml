@@ -177,11 +177,16 @@ steps:
 
 
 - script: | 
+    # borro directorios utilizados anteriormente para no agregarlos al repo
+    rm -rf ms-*
+    rm -rf nginx-conf
+
     git config --global user.email "diegodlrh@hotmail.com"
     git config --global user.name "diegodlrh"
     source .version/build
 
-    echo "version_build="$(($version_build+1)) > .version/build
+    new_version=$(($version_build+1))
+    echo "version_build="$new_version > .version/build
     cat .version/build
   
     git add .
@@ -202,6 +207,6 @@ steps:
     imageSource: 'imagename'
     sourceImageName: 'orders-service'
     repositoryName: 'orders-service'
-    pushTag: '$version_build'
+    pushTag: '$new_version'
     autoCreateRepository: true
     forceDockerNamingConventions: true 
