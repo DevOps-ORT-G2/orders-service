@@ -16,13 +16,8 @@ pool:
   vmImage: ubuntu-latest
 
 steps:
-#- script: echo Hello, world!
-#  displayName: 'Run a one-line script'
-
-#- script: |
-#    echo Add other tasks to build, test, and deploy your project.
-#    echo See https://aka.ms/yaml
-#  displayName: 'Run a multi-line script'
+- checkout: self
+  persistCredentials: true
 
 ##########################################################
 # Realizamos análisis de código estático con SonarCloud
@@ -179,6 +174,21 @@ steps:
   displayName: Ejecutar test Postman
 
 
+
+
+- script: | 
+    git config --global user.email "diegodlrh@hotmail.com"
+    git config --global user.name "diegodlrh"
+    source .version/build
+
+    echo "version_build="$(($version_build+1)) > .version/build
+    cat .version/build
+  
+    git add .
+    git commit -m "update version build [skip ci]"
+    git push origin HEAD:master 
+  displayName: Actualizar versión de build 
+  
     
 ##########################################################
 # Pusheamos la imagen de docker al ECR
@@ -192,6 +202,6 @@ steps:
     imageSource: 'imagename'
     sourceImageName: 'orders-service'
     repositoryName: 'orders-service'
-    pushTag: '2'
+    pushTag: '$version_build'
     autoCreateRepository: true
     forceDockerNamingConventions: true 
